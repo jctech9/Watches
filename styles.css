@@ -236,6 +236,27 @@ button:disabled {
   color: var(--text-primary);
 }
 
+.watch-edit-row {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.note-input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  min-height: 40px;
+  font: inherit;
+  padding: 10px;
+}
+
+.small-button {
+  min-height: 40px;
+  margin-top: 0;
+  font-size: 0.92rem;
+}
+
 .hidden {
   display: none;
 }

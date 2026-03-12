@@ -15,6 +15,7 @@ import {
   query,
   orderBy,
   setDoc,
+  updateDoc,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
@@ -93,6 +94,16 @@ function formatDate(value) {
   return `${day}/${month}/${year}`;
 }
 
+function escapeHtml(value) {
+  const text = String(value ?? "");
+  return text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 function renderWatches(watches) {
   watchesList.innerHTML = "";
 
@@ -108,6 +119,7 @@ function renderWatches(watches) {
     const batteryText = watch.hasBattery
       ? watch.batteryDuration || "Informação não preenchida"
       : "Não usa bateria";
+    const noteValue = watch.note || "";
 
     item.innerHTML = `
       <p><strong>Marca:</strong> ${watch.brand}</p>
@@ -115,7 +127,43 @@ function renderWatches(watches) {
       <p><strong>Data da compra:</strong> ${formatDate(watch.purchaseDate)}</p>
       <p><strong>Preço:</strong> ${formatCurrency(watch.price)}</p>
       <p><strong>Duração da bateria:</strong> ${batteryText}</p>
+      <div class="watch-edit-row">
+        <label for="note-${watch.id}"><strong>Observação:</strong></label>
+        <input
+          id="note-${watch.id}"
+          class="note-input"
+          type="text"
+          value="${escapeHtml(noteValue)}"
+          placeholder="Campo editável da listagem"
+        />
+        <button type="button" class="small-button save-note-button">Salvar observação</button>
+      </div>
     `;
+
+    const saveNoteButton = item.querySelector(".save-note-button");
+    const noteInput = item.querySelector(".note-input");
+
+    saveNoteButton.addEventListener("click", async () => {
+      if (!currentUserId) {
+        setFeedback("Faça login para editar relógios.", "error");
+        return;
+      }
+
+      saveNoteButton.disabled = true;
+
+      try {
+        await updateDoc(doc(db, "users", currentUserId, "watches", watch.id), {
+          note: noteInput.value.trim(),
+          updatedAt: serverTimestamp(),
+        });
+
+        setFeedback("Observação atualizada com sucesso.", "ok");
+      } catch (error) {
+        setFeedback(`Erro ao atualizar observação: ${error.message}`, "error");
+      } finally {
+        saveNoteButton.disabled = false;
+      }
+    });
 
     watchesList.appendChild(item);
   });
