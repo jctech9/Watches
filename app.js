@@ -17,12 +17,6 @@ import {
   updateDoc,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
-import {
-  getStorage,
-  ref,
-  uploadBytes,
-  getDownloadURL,
-} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB5Jcu5I0V5Xf--ggGiA5SDREed9WZ7fEQ",
@@ -42,7 +36,6 @@ try {
 }
 const auth = getAuth(app);
 const db = getFirestore(app);
-const storage = getStorage(app);
 
 const loginForm = document.getElementById("login-form");
 const emailInput = document.getElementById("email");
@@ -60,7 +53,6 @@ const purchaseDateInput = document.getElementById("purchase-date");
 const priceInput = document.getElementById("price");
 const hasBatteryInput = document.getElementById("has-battery");
 const batteryDurationInput = document.getElementById("battery-duration");
-const photoInput = document.getElementById("photo");
 const watchesList = document.getElementById("watches-list");
 const watchSubmitButton = document.getElementById("watch-submit-button");
 
@@ -101,31 +93,6 @@ function formatDate(value) {
   return `${day}/${month}/${year}`;
 }
 
-function validatePhoto(file) {
-  if (!file) {
-    return null;
-  }
-
-  const maxSizeInBytes = 3 * 1024 * 1024;
-  if (!file.type.startsWith("image/")) {
-    return "Selecione um arquivo de imagem válido.";
-  }
-
-  if (file.size > maxSizeInBytes) {
-    return "A foto deve ter no máximo 3MB.";
-  }
-
-  return null;
-}
-
-async function uploadWatchPhoto(userId, watchId, file) {
-  const extension = (file.name.split(".").pop() || "jpg").toLowerCase();
-  const fileName = `watch_${Date.now()}.${extension}`;
-  const imageRef = ref(storage, `users/${userId}/watches/${watchId}/${fileName}`);
-  await uploadBytes(imageRef, file);
-  return getDownloadURL(imageRef);
-}
-
 function escapeHtml(value) {
   const text = String(value ?? "");
   return text
@@ -152,22 +119,9 @@ function renderWatches(watches) {
     const noteValue = watch.note || "";
     const purchaseDateValue = watch.purchaseDate || "";
     const priceValue = Number.isFinite(Number(watch.price)) ? Number(watch.price) : 0;
-    const photoUrl = watch.photoUrl || "";
 
     item.innerHTML = `
       <div class="watch-edit-row">
-        <div class="watch-photo-wrap">
-          ${photoUrl ? `<img src="${escapeHtml(photoUrl)}" alt="Foto do relógio ${escapeHtml(watch.model || "")}" class="watch-photo" />` : "<p class=\"watch-photo-empty\">Sem foto</p>"}
-        </div>
-
-        <label for="photo-${watch.id}"><strong>Nova foto:</strong></label>
-        <input
-          id="photo-${watch.id}"
-          class="edit-photo"
-          type="file"
-          accept="image/*"
-        />
-
         <label for="brand-${watch.id}"><strong>Marca:</strong></label>
         <input
           id="brand-${watch.id}"
@@ -246,7 +200,6 @@ function renderWatches(watches) {
     const editHasBattery = item.querySelector(".edit-has-battery");
     const editBatteryDuration = item.querySelector(".edit-battery-duration");
     const editNote = item.querySelector(".edit-note");
-    const editPhoto = item.querySelector(".edit-photo");
 
     editHasBattery.addEventListener("change", () => {
       editBatteryDuration.disabled = !editHasBattery.checked;
@@ -268,7 +221,6 @@ function renderWatches(watches) {
       const hasBatteryValue = editHasBattery.checked;
       const batteryDuration = editBatteryDuration.value.trim();
       const note = editNote.value.trim();
-      const photoFile = editPhoto.files?.[0] || null;
 
       if (!brand || !model || !purchaseDate || Number.isNaN(price) || price < 0) {
         setFeedback("Preencha marca, modelo, data e preço válidos antes de salvar.", "error");
@@ -280,20 +232,9 @@ function renderWatches(watches) {
         return;
       }
 
-      const photoError = validatePhoto(photoFile);
-      if (photoError) {
-        setFeedback(photoError, "error");
-        return;
-      }
-
       saveWatchButton.disabled = true;
 
       try {
-        let photoUrlToSave = watch.photoUrl || null;
-        if (photoFile) {
-          photoUrlToSave = await uploadWatchPhoto(currentUserId, watch.id, photoFile);
-        }
-
         await updateDoc(doc(db, "users", currentUserId, "watches", watch.id), {
           brand,
           model,
@@ -302,7 +243,6 @@ function renderWatches(watches) {
           hasBattery: hasBatteryValue,
           batteryDuration: hasBatteryValue ? batteryDuration : null,
           note,
-          photoUrl: photoUrlToSave,
           updatedAt: serverTimestamp(),
         });
 
@@ -417,7 +357,6 @@ watchForm.addEventListener("submit", async (event) => {
   const price = Number(priceInput.value);
   const hasBattery = hasBatteryInput.checked;
   const batteryDuration = batteryDurationInput.value.trim();
-  const photoFile = photoInput.files?.[0] || null;
 
   if (!brand || !model || !purchaseDate || Number.isNaN(price) || price < 0) {
     setFeedback("Preencha todos os campos obrigatórios do relógio.", "error");
@@ -429,20 +368,10 @@ watchForm.addEventListener("submit", async (event) => {
     return;
   }
 
-  const photoError = validatePhoto(photoFile);
-  if (photoError) {
-    setFeedback(photoError, "error");
-    return;
-  }
-
   setWatchLoading(true);
 
   try {
     const watchDocRef = doc(collection(db, "users", currentUserId, "watches"));
-    let photoUrl = null;
-    if (photoFile) {
-      photoUrl = await uploadWatchPhoto(currentUserId, watchDocRef.id, photoFile);
-    }
 
     await setDoc(watchDocRef, {
       brand,
@@ -451,7 +380,6 @@ watchForm.addEventListener("submit", async (event) => {
       price,
       hasBattery,
       batteryDuration: hasBattery ? batteryDuration : null,
-      photoUrl,
       createdAt: serverTimestamp(),
     });
 

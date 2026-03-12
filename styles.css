@@ -247,29 +247,6 @@ button:disabled {
   color: var(--text-secondary);
 }
 
-.watch-photo-wrap {
-  width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  min-height: 150px;
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-  background: #f7fbff;
-}
-
-.watch-photo {
-  width: 100%;
-  max-height: 220px;
-  object-fit: cover;
-  display: block;
-}
-
-.watch-photo-empty {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-}
-
 .watch-edit-row input {
   width: 100%;
   border: 1px solid var(--line);
