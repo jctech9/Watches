@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Watches - Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="auth-page">
+      <section class="auth-card">
+        <header class="auth-header">
+          <p class="eyebrow">Watches</p>
+          <h1>Entrar na sua conta</h1>
+          <p class="subtitle">Use seu e-mail e senha para acessar.</p>
+        </header>
+
+        <form id="login-form" class="auth-form" novalidate>
+          <label for="email">E-mail</label>
+          <input id="email" name="email" type="email" placeholder="voce@empresa.com" required />
+
+          <label for="password">Senha</label>
+          <input id="password" name="password" type="password" placeholder="Sua senha" required minlength="6" />
+
+          <button id="submit-button" type="submit">Entrar</button>
+        </form>
+
+        <section id="user-panel" class="user-panel hidden" aria-live="polite">
+          <p id="welcome-message"></p>
+          <button id="logout-button" type="button" class="ghost">Sair</button>
+        </section>
+
+        <section id="watches-panel" class="watches-panel hidden" aria-live="polite">
+          <h2>Meus relógios de pulso</h2>
+
+          <form id="watch-form" class="watch-form" novalidate>
+            <label for="brand">Marca</label>
+            <input id="brand" name="brand" type="text" placeholder="Ex.: Casio" required />
+
+            <label for="model">Modelo</label>
+            <input id="model" name="model" type="text" placeholder="Ex.: G-Shock DW-5600" required />
+
+            <label for="purchase-date">Data da compra</label>
+            <input id="purchase-date" name="purchaseDate" type="date" required />
+
+            <label for="price">Preço (R$)</label>
+            <input id="price" name="price" type="number" min="0" step="0.01" placeholder="0,00" required />
+
+            <label class="check-row" for="has-battery">
+              <input id="has-battery" name="hasBattery" type="checkbox" />
+              Usa bateria?
+            </label>
+
+            <label for="battery-duration">Duração da bateria</label>
+            <input
+              id="battery-duration"
+              name="batteryDuration"
+              type="text"
+              placeholder="Ex.: 2 anos"
+              disabled
+            />
+
+            <button id="watch-submit-button" type="submit">Salvar relógio</button>
+          </form>
+
+          <section>
+            <h3>Lista de relógios</h3>
+            <ul id="watches-list" class="watches-list"></ul>
+          </section>
+        </section>
+
+        <p id="feedback" class="feedback" aria-live="polite"></p>
+      </section>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

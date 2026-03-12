@@ -1,0 +1,252 @@
+:root {
+  --bg-main: #f6f8fb;
+  --bg-accent: #d9ecff;
+  --card: #ffffff;
+  --text-primary: #10243f;
+  --text-secondary: #4b607a;
+  --line: #d6e1f0;
+  --brand: #1e7bff;
+  --brand-dark: #0f5ed2;
+  --danger: #c0362f;
+  --ok: #0d8f3f;
+  --radius: 18px;
+  --shadow: 0 20px 40px rgba(31, 77, 152, 0.15);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: "Outfit", sans-serif;
+  color: var(--text-primary);
+  background:
+    radial-gradient(circle at 10% 15%, var(--bg-accent) 0%, transparent 30%),
+    radial-gradient(circle at 90% 80%, #c8ffd8 0%, transparent 25%),
+    var(--bg-main);
+}
+
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 760px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 28px;
+}
+
+.auth-header h1 {
+  font-size: clamp(1.5rem, 4.5vw, 2rem);
+  margin: 6px 0;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.subtitle {
+  margin: 0 0 22px;
+  color: var(--text-secondary);
+}
+
+.auth-form {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.auth-form label {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+}
+
+.auth-form input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  min-height: 44px;
+  font: inherit;
+  padding: 12px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.auth-form input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(30, 123, 255, 0.15);
+}
+
+button {
+  margin-top: 8px;
+  min-height: 46px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--brand);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.2s ease;
+}
+
+button:hover {
+  background: var(--brand-dark);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.ghost {
+  margin-top: 8px;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text-primary);
+}
+
+.ghost:hover {
+  background: #f2f6fc;
+}
+
+.feedback {
+  min-height: 22px;
+  margin: 12px 0 0;
+  font-size: 0.93rem;
+}
+
+.feedback.ok {
+  color: var(--ok);
+}
+
+.feedback.error {
+  color: var(--danger);
+}
+
+.user-panel {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+}
+
+.user-panel p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.watches-panel {
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+}
+
+.watches-panel h2,
+.watches-panel h3 {
+  margin: 0 0 12px;
+}
+
+.watch-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.watch-form label,
+.watch-form .check-row {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+}
+
+.watch-form input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  min-height: 44px;
+  font: inherit;
+  padding: 12px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.watch-form input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(30, 123, 255, 0.15);
+}
+
+.watch-form .check-row {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.watch-form .check-row input {
+  width: auto;
+  min-height: auto;
+  padding: 0;
+}
+
+.watch-form button {
+  grid-column: 1 / -1;
+}
+
+.watches-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.watches-list li {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  background: #fbfdff;
+}
+
+.watches-list p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.watches-list strong {
+  color: var(--text-primary);
+}
+
+.hidden {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 22px 16px;
+    border-radius: 14px;
+  }
+
+  .watch-form {
+    grid-template-columns: 1fr;
+  }
+}
