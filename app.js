@@ -9,7 +9,6 @@ import {
 import {
   getFirestore,
   collection,
-  addDoc,
   doc,
   getDocs,
   query,
@@ -18,6 +17,12 @@ import {
   updateDoc,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB5Jcu5I0V5Xf--ggGiA5SDREed9WZ7fEQ",
@@ -37,6 +42,7 @@ try {
 }
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 const loginForm = document.getElementById("login-form");
 const emailInput = document.getElementById("email");
@@ -54,6 +60,7 @@ const purchaseDateInput = document.getElementById("purchase-date");
 const priceInput = document.getElementById("price");
 const hasBatteryInput = document.getElementById("has-battery");
 const batteryDurationInput = document.getElementById("battery-duration");
+const photoInput = document.getElementById("photo");
 const watchesList = document.getElementById("watches-list");
 const watchSubmitButton = document.getElementById("watch-submit-button");
 
@@ -94,6 +101,31 @@ function formatDate(value) {
   return `${day}/${month}/${year}`;
 }
 
+function validatePhoto(file) {
+  if (!file) {
+    return null;
+  }
+
+  const maxSizeInBytes = 3 * 1024 * 1024;
+  if (!file.type.startsWith("image/")) {
+    return "Selecione um arquivo de imagem válido.";
+  }
+
+  if (file.size > maxSizeInBytes) {
+    return "A foto deve ter no máximo 3MB.";
+  }
+
+  return null;
+}
+
+async function uploadWatchPhoto(userId, watchId, file) {
+  const extension = (file.name.split(".").pop() || "jpg").toLowerCase();
+  const fileName = `watch_${Date.now()}.${extension}`;
+  const imageRef = ref(storage, `users/${userId}/watches/${watchId}/${fileName}`);
+  await uploadBytes(imageRef, file);
+  return getDownloadURL(imageRef);
+}
+
 function escapeHtml(value) {
   const text = String(value ?? "");
   return text
@@ -116,52 +148,170 @@ function renderWatches(watches) {
 
   watches.forEach((watch) => {
     const item = document.createElement("li");
-    const batteryText = watch.hasBattery
-      ? watch.batteryDuration || "Informação não preenchida"
-      : "Não usa bateria";
+    const hasBattery = Boolean(watch.hasBattery);
     const noteValue = watch.note || "";
+    const purchaseDateValue = watch.purchaseDate || "";
+    const priceValue = Number.isFinite(Number(watch.price)) ? Number(watch.price) : 0;
+    const photoUrl = watch.photoUrl || "";
 
     item.innerHTML = `
-      <p><strong>Marca:</strong> ${watch.brand}</p>
-      <p><strong>Modelo:</strong> ${watch.model}</p>
-      <p><strong>Data da compra:</strong> ${formatDate(watch.purchaseDate)}</p>
-      <p><strong>Preço:</strong> ${formatCurrency(watch.price)}</p>
-      <p><strong>Duração da bateria:</strong> ${batteryText}</p>
       <div class="watch-edit-row">
+        <div class="watch-photo-wrap">
+          ${photoUrl ? `<img src="${escapeHtml(photoUrl)}" alt="Foto do relógio ${escapeHtml(watch.model || "")}" class="watch-photo" />` : "<p class=\"watch-photo-empty\">Sem foto</p>"}
+        </div>
+
+        <label for="photo-${watch.id}"><strong>Nova foto:</strong></label>
+        <input
+          id="photo-${watch.id}"
+          class="edit-photo"
+          type="file"
+          accept="image/*"
+        />
+
+        <label for="brand-${watch.id}"><strong>Marca:</strong></label>
+        <input
+          id="brand-${watch.id}"
+          class="edit-brand"
+          type="text"
+          value="${escapeHtml(watch.brand || "")}"
+          placeholder="Marca"
+        />
+
+        <label for="model-${watch.id}"><strong>Modelo:</strong></label>
+        <input
+          id="model-${watch.id}"
+          class="edit-model"
+          type="text"
+          value="${escapeHtml(watch.model || "")}"
+          placeholder="Modelo"
+        />
+
+        <label for="purchase-date-${watch.id}"><strong>Data da compra:</strong></label>
+        <input
+          id="purchase-date-${watch.id}"
+          class="edit-purchase-date"
+          type="date"
+          value="${escapeHtml(purchaseDateValue)}"
+        />
+
+        <label for="price-${watch.id}"><strong>Preço (R$):</strong></label>
+        <input
+          id="price-${watch.id}"
+          class="edit-price"
+          type="number"
+          min="0"
+          step="0.01"
+          value="${escapeHtml(priceValue)}"
+        />
+
+        <label class="edit-check-row" for="has-battery-${watch.id}">
+          <input
+            id="has-battery-${watch.id}"
+            class="edit-has-battery"
+            type="checkbox"
+            ${hasBattery ? "checked" : ""}
+          />
+          Usa bateria?
+        </label>
+
+        <label for="battery-duration-${watch.id}"><strong>Duração da bateria:</strong></label>
+        <input
+          id="battery-duration-${watch.id}"
+          class="edit-battery-duration"
+          type="text"
+          value="${escapeHtml(watch.batteryDuration || "")}"
+          placeholder="Ex.: 2 anos"
+          ${hasBattery ? "" : "disabled"}
+        />
+
         <label for="note-${watch.id}"><strong>Observação:</strong></label>
         <input
           id="note-${watch.id}"
-          class="note-input"
+          class="edit-note"
           type="text"
           value="${escapeHtml(noteValue)}"
-          placeholder="Campo editável da listagem"
+          placeholder="Observação"
         />
-        <button type="button" class="small-button save-note-button">Salvar observação</button>
+
+        <p class="watch-summary"><strong>Resumo atual:</strong> ${formatCurrency(priceValue)} | ${formatDate(purchaseDateValue)}</p>
+        <button type="button" class="small-button save-watch-button">Salvar alterações</button>
       </div>
     `;
 
-    const saveNoteButton = item.querySelector(".save-note-button");
-    const noteInput = item.querySelector(".note-input");
+    const saveWatchButton = item.querySelector(".save-watch-button");
+    const editBrand = item.querySelector(".edit-brand");
+    const editModel = item.querySelector(".edit-model");
+    const editPurchaseDate = item.querySelector(".edit-purchase-date");
+    const editPrice = item.querySelector(".edit-price");
+    const editHasBattery = item.querySelector(".edit-has-battery");
+    const editBatteryDuration = item.querySelector(".edit-battery-duration");
+    const editNote = item.querySelector(".edit-note");
+    const editPhoto = item.querySelector(".edit-photo");
 
-    saveNoteButton.addEventListener("click", async () => {
+    editHasBattery.addEventListener("change", () => {
+      editBatteryDuration.disabled = !editHasBattery.checked;
+      if (!editHasBattery.checked) {
+        editBatteryDuration.value = "";
+      }
+    });
+
+    saveWatchButton.addEventListener("click", async () => {
       if (!currentUserId) {
         setFeedback("Faça login para editar relógios.", "error");
         return;
       }
 
-      saveNoteButton.disabled = true;
+      const brand = editBrand.value.trim();
+      const model = editModel.value.trim();
+      const purchaseDate = editPurchaseDate.value;
+      const price = Number(editPrice.value);
+      const hasBatteryValue = editHasBattery.checked;
+      const batteryDuration = editBatteryDuration.value.trim();
+      const note = editNote.value.trim();
+      const photoFile = editPhoto.files?.[0] || null;
+
+      if (!brand || !model || !purchaseDate || Number.isNaN(price) || price < 0) {
+        setFeedback("Preencha marca, modelo, data e preço válidos antes de salvar.", "error");
+        return;
+      }
+
+      if (hasBatteryValue && !batteryDuration) {
+        setFeedback("Informe a duração da bateria ou desmarque a opção de bateria.", "error");
+        return;
+      }
+
+      const photoError = validatePhoto(photoFile);
+      if (photoError) {
+        setFeedback(photoError, "error");
+        return;
+      }
+
+      saveWatchButton.disabled = true;
 
       try {
+        let photoUrlToSave = watch.photoUrl || null;
+        if (photoFile) {
+          photoUrlToSave = await uploadWatchPhoto(currentUserId, watch.id, photoFile);
+        }
+
         await updateDoc(doc(db, "users", currentUserId, "watches", watch.id), {
-          note: noteInput.value.trim(),
+          brand,
+          model,
+          purchaseDate,
+          price,
+          hasBattery: hasBatteryValue,
+          batteryDuration: hasBatteryValue ? batteryDuration : null,
+          note,
+          photoUrl: photoUrlToSave,
           updatedAt: serverTimestamp(),
         });
 
-        setFeedback("Observação atualizada com sucesso.", "ok");
+        await loadWatches();
+        setFeedback("Relógio atualizado com sucesso.", "ok");
       } catch (error) {
-        setFeedback(`Erro ao atualizar observação: ${error.message}`, "error");
+        setFeedback(`Erro ao atualizar relógio: ${error.message}`, "error");
       } finally {
-        saveNoteButton.disabled = false;
+        saveWatchButton.disabled = false;
       }
     });
 
@@ -267,6 +417,7 @@ watchForm.addEventListener("submit", async (event) => {
   const price = Number(priceInput.value);
   const hasBattery = hasBatteryInput.checked;
   const batteryDuration = batteryDurationInput.value.trim();
+  const photoFile = photoInput.files?.[0] || null;
 
   if (!brand || !model || !purchaseDate || Number.isNaN(price) || price < 0) {
     setFeedback("Preencha todos os campos obrigatórios do relógio.", "error");
@@ -278,16 +429,29 @@ watchForm.addEventListener("submit", async (event) => {
     return;
   }
 
+  const photoError = validatePhoto(photoFile);
+  if (photoError) {
+    setFeedback(photoError, "error");
+    return;
+  }
+
   setWatchLoading(true);
 
   try {
-    await addDoc(collection(db, "users", currentUserId, "watches"), {
+    const watchDocRef = doc(collection(db, "users", currentUserId, "watches"));
+    let photoUrl = null;
+    if (photoFile) {
+      photoUrl = await uploadWatchPhoto(currentUserId, watchDocRef.id, photoFile);
+    }
+
+    await setDoc(watchDocRef, {
       brand,
       model,
       purchaseDate,
       price,
       hasBattery,
       batteryDuration: hasBattery ? batteryDuration : null,
+      photoUrl,
       createdAt: serverTimestamp(),
     });
 

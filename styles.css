@@ -242,13 +242,59 @@ button:disabled {
   gap: 8px;
 }
 
-.note-input {
+.watch-edit-row label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.watch-photo-wrap {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  min-height: 150px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: #f7fbff;
+}
+
+.watch-photo {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  display: block;
+}
+
+.watch-photo-empty {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.watch-edit-row input {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 10px;
   min-height: 40px;
   font: inherit;
   padding: 10px;
+}
+
+.watch-edit-row .edit-check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.watch-edit-row .edit-check-row input {
+  width: auto;
+  min-height: auto;
+  padding: 0;
+}
+
+.watch-summary {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
 }
 
 .small-button {
