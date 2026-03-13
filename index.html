@@ -3,7 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1e7bff" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Watches - Login</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="./assets/icons/icon-192.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -49,6 +56,9 @@
             <label for="model">Modelo</label>
             <input id="model" name="model" type="text" autocomplete="off" required />
 
+            <label for="precision">Precisao mensal (segundos, +-)</label>
+            <input id="precision" name="precision" type="text" inputmode="decimal" autocomplete="off" placeholder="+-" />
+
             <label for="purchase-date">Data da compra</label>
             <input
               id="purchase-date"
@@ -61,7 +71,7 @@
             />
 
             <label for="price">Preço (R$)</label>
-            <input id="price" name="price" type="text" inputmode="decimal" maxlength="20" autocomplete="off" required />
+            <input id="price" name="price" type="text" inputmode="decimal" maxlength="20" autocomplete="off" />
 
             <label class="check-row" for="has-battery">
               <input id="has-battery" name="hasBattery" type="checkbox" />

@@ -306,11 +306,106 @@ button:disabled {
 .watch-static-row {
   margin-top: 10px;
   display: grid;
-  gap: 6px;
+  gap: 10px;
 }
 
 .watch-static-row p {
   margin: 0;
+}
+
+.watch-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.watch-section-block {
+  border: 1px solid rgba(16, 36, 63, 0.12);
+  background: #f8fbff;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.watch-section-title {
+  margin: 0 0 8px;
+  font-size: 0.83rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #0f5ed2;
+}
+
+.watch-status-block {
+  background: linear-gradient(90deg, rgba(30, 123, 255, 0.08) 0%, rgba(30, 123, 255, 0.02) 100%);
+  border-color: rgba(30, 123, 255, 0.24);
+}
+
+.watch-status-grid,
+.watch-data-list {
+  display: grid;
+  gap: 6px;
+}
+
+.watch-details-menu {
+  border: 1px dashed rgba(16, 36, 63, 0.22);
+  border-radius: 10px;
+  padding: 6px 10px 10px;
+  background: #fcfdff;
+}
+
+.watch-details-menu summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #0f5ed2;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 34px;
+}
+
+.watch-details-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.watch-details-menu summary::after {
+  content: "+";
+  font-size: 1.05rem;
+  line-height: 1;
+  color: #0f5ed2;
+}
+
+.watch-details-menu[open] summary::after {
+  content: "-";
+}
+
+.watch-manufacturer-block {
+  background: linear-gradient(180deg, #fffaf0 0%, #fff4d6 100%);
+  border-color: rgba(203, 146, 24, 0.35);
+}
+
+.watch-manufacturer-block .watch-section-title {
+  color: #9c6400;
+}
+
+.watch-user-block {
+  background: linear-gradient(180deg, #f2fbff 0%, #def4ff 100%);
+  border-color: rgba(20, 129, 173, 0.32);
+}
+
+.watch-user-block .watch-section-title {
+  color: #0f6b92;
+}
+
+.watch-static-row .watch-metric {
+  background: linear-gradient(90deg, rgba(30, 123, 255, 0.09) 0%, rgba(30, 123, 255, 0.02) 100%);
+  border: 1px solid rgba(30, 123, 255, 0.2);
+  border-radius: 10px;
+  padding: 7px 10px;
+}
+
+.watch-static-row .watch-metric strong {
+  color: #0c2f57;
 }
 
 .watch-edit-row label {
@@ -389,6 +484,10 @@ button:disabled {
   }
 
   .watch-edit-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .watch-info-grid {
     grid-template-columns: 1fr;
   }
 }
