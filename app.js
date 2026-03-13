@@ -374,12 +374,25 @@ function calculateRemainingBatteryLife(startDateValue, batteryDuration, referenc
   const replacementDate = new Date(startDate);
   replacementDate.setMonth(replacementDate.getMonth() + durationInMonths);
 
+  const buildBatteryProgress = (remainingTotalMonths) => {
+    if (durationInMonths <= 0) {
+      return 0;
+    }
+
+    const boundedRemaining = Math.max(0, Math.min(durationInMonths, remainingTotalMonths));
+    return Math.round((boundedRemaining / durationInMonths) * 100);
+  };
+
   if (referenceDate >= replacementDate) {
     const overdue = calculateElapsedFromDates(replacementDate, referenceDate);
+    const remainingTotalMonths = 0;
     return {
       isOverdue: true,
       remainingYears: 0,
       remainingMonths: 0,
+      remainingTotalMonths,
+      durationMonths: durationInMonths,
+      remainingPercentage: buildBatteryProgress(remainingTotalMonths),
       overdueYears: overdue.years,
       overdueMonths: overdue.months,
     };
@@ -390,6 +403,9 @@ function calculateRemainingBatteryLife(startDateValue, batteryDuration, referenc
     isOverdue: false,
     remainingYears: remaining.years,
     remainingMonths: remaining.months,
+    remainingTotalMonths: remaining.totalMonths,
+    durationMonths: durationInMonths,
+    remainingPercentage: buildBatteryProgress(remaining.totalMonths),
     overdueYears: 0,
     overdueMonths: 0,
   };
@@ -461,6 +477,23 @@ function renderWatches(watches) {
       ? calculateRemainingBatteryLife(batteryStartDate, watch.batteryDuration || "")
       : null;
     const remainingBatteryLabel = hasBattery ? formatRemainingBatteryLabel(remainingBattery) : "Nao se aplica";
+    const batteryRemainingClass = hasBattery ? "watch-remaining-time" : "watch-remaining-time no-battery";
+    const batteryProgressPercentage = remainingBattery ? remainingBattery.remainingPercentage : null;
+    const batteryMeterClass = remainingBattery
+      ? `watch-battery-meter${remainingBattery.isOverdue ? " is-overdue" : ""}${
+          !remainingBattery.isOverdue && batteryProgressPercentage <= 20 ? " is-low" : ""
+        }`
+      : "watch-battery-meter";
+    const batteryProgressMarkup = hasBattery && remainingBattery
+      ? `
+        <span class="watch-battery-meter-wrap" aria-label="Bateria restante em percentual">
+          <span class="${batteryMeterClass}" role="img" aria-label="Bateria restante: ${batteryProgressPercentage}%">
+            <span class="watch-battery-meter-level" style="width: ${batteryProgressPercentage}%;"></span>
+          </span>
+          <span class="watch-battery-meter-percent">${batteryProgressPercentage}%</span>
+        </span>
+      `
+      : "";
     const watchAge = calculateAgeFromPurchase(purchaseDateValue);
     const watchAgeLabel = watchAge ? formatAgeLabel(watchAge.years, watchAge.months) : "Nao foi possivel calcular";
     const manufacturerDetails = hasBattery
@@ -481,7 +514,7 @@ function renderWatches(watches) {
           <span class="watch-kicker">Relogio</span>
           <p class="watch-title"><span class="watch-brand">${watchBrandLabel}</span> <span class="watch-model">${watchModelLabel}</span></p>
         </div>
-        <button type="button" class="small-button edit-watch-button">Editar</button>
+        <button type="button" class="small-button edit-watch-button" aria-label="Editar relogio" title="Editar relogio">&#9998;</button>
       </div>
 
       <div class="watch-static-row">
@@ -489,7 +522,7 @@ function renderWatches(watches) {
           <h4 class="watch-section-title">Status atual</h4>
           <div class="watch-status-grid">
             <p class="watch-metric"><strong>Idade:</strong> ${escapeHtml(watchAgeLabel)}</p>
-            <p class="watch-metric"><strong>Tempo restante da bateria:</strong> ${escapeHtml(remainingBatteryLabel)}</p>
+            <p class="watch-metric"><strong>Tempo restante da bateria:</strong> <span class="${batteryRemainingClass}">${escapeHtml(remainingBatteryLabel)}</span>${batteryProgressMarkup}</p>
           </div>
         </section>
 
@@ -896,7 +929,7 @@ onAuthStateChanged(auth, (user) => {
     currentUserId = user.uid;
     userPanel.classList.remove("hidden");
     watchesPanel.classList.remove("hidden");
-    welcomeMessage.textContent = `Usuário autenticado: ${user.email}`;
+    welcomeMessage.textContent = "";
     loginForm.classList.add("hidden");
     loadWatches().catch((error) => {
       setFeedback(`Erro ao carregar relógios: ${error.message}`, "error");

@@ -258,15 +258,39 @@ button:disabled {
 
 .watch-card-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
 }
 
 .watch-title-wrap {
+  flex: 1;
   min-width: 0;
   display: grid;
   gap: 4px;
+}
+
+.edit-watch-button {
+  width: 30px;
+  min-width: 30px;
+  min-height: 30px;
+  height: 30px;
+  margin-top: 0;
+  padding: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  line-height: 1;
+  background: #eaf2ff;
+  color: #0f5ed2;
+  border: 1px solid rgba(15, 94, 210, 0.25);
+}
+
+.edit-watch-button:hover {
+  background: #dce9ff;
+  color: #0a4db0;
 }
 
 .watch-kicker {
@@ -408,6 +432,104 @@ button:disabled {
   color: #0c2f57;
 }
 
+.watch-remaining-time {
+  display: inline-block;
+}
+
+.watch-remaining-time.no-battery {
+  opacity: 0.75;
+}
+
+.watch-battery-meter-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.watch-battery-meter {
+  position: relative;
+  width: 100%;
+  max-width: 230px;
+  height: 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 94, 210, 0.35);
+  background: linear-gradient(180deg, #edf4ff 0%, #e4efff 100%);
+  overflow: visible;
+}
+
+.watch-battery-meter-level {
+  position: relative;
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #1e7bff 0%, #69b1ff 100%);
+  transition: width 0.7s ease;
+  overflow: hidden;
+}
+
+.watch-battery-meter-level::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.55) 46%, transparent 100%);
+  transform: translateX(-120%);
+  animation: batteryShine 2.8s ease-in-out infinite;
+}
+
+.watch-battery-meter.is-low {
+  border-color: rgba(196, 126, 0, 0.45);
+  background: linear-gradient(180deg, #fff7e8 0%, #fff1d9 100%);
+}
+
+.watch-battery-meter.is-low .watch-battery-meter-level {
+  background: linear-gradient(90deg, #f6a500 0%, #ffd074 100%);
+}
+
+.watch-battery-meter.is-overdue {
+  border-color: rgba(192, 54, 47, 0.45);
+  background: linear-gradient(180deg, #ffeceb 0%, #ffe3e1 100%);
+}
+
+.watch-battery-meter.is-overdue .watch-battery-meter-level {
+  background: linear-gradient(90deg, #c0362f 0%, #d95f59 100%);
+}
+
+.watch-battery-meter-percent {
+  min-width: 38px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #0f5ed2;
+  letter-spacing: 0.02em;
+}
+
+.watch-battery-meter.is-low + .watch-battery-meter-percent {
+  color: #9c6400;
+}
+
+.watch-battery-meter.is-overdue + .watch-battery-meter-percent {
+  color: #a3322b;
+}
+
+@keyframes batteryShine {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .watch-battery-meter-level,
+  .watch-battery-meter-level::after {
+    animation: none;
+    transition: none;
+    transform: translateX(0);
+  }
+}
+
 .watch-edit-row label {
   font-size: 0.9rem;
   color: var(--text-secondary);
@@ -475,8 +597,17 @@ button:disabled {
   }
 
   .watch-card-header {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .watch-card-header .edit-watch-button {
+    width: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    height: 28px;
+    font-size: 0.9rem;
   }
 
   .watch-model {
