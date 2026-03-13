@@ -10,6 +10,7 @@ import {
   getFirestore,
   collection,
   doc,
+  deleteDoc,
   getDocs,
   query,
   orderBy,
@@ -103,6 +104,14 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+function formatBattery(hasBattery, batteryDuration) {
+  if (!hasBattery) {
+    return "Nao";
+  }
+
+  return batteryDuration ? `Sim (${batteryDuration})` : "Sim";
+}
+
 function renderWatches(watches) {
   watchesList.innerHTML = "";
 
@@ -119,80 +128,75 @@ function renderWatches(watches) {
     const noteValue = watch.note || "";
     const purchaseDateValue = watch.purchaseDate || "";
     const priceValue = Number.isFinite(Number(watch.price)) ? Number(watch.price) : 0;
+    const purchaseDateLabel = formatDate(purchaseDateValue);
+    const priceLabel = formatCurrency(priceValue);
+    const batteryLabel = formatBattery(hasBattery, watch.batteryDuration || "");
 
     item.innerHTML = `
-      <div class="watch-edit-row">
+      <div class="watch-card-header">
+        <p class="watch-title"><strong>${escapeHtml(watch.brand || "Sem marca")}</strong> ${escapeHtml(watch.model || "Sem modelo")}</p>
+        <button type="button" class="small-button edit-watch-button">Editar</button>
+      </div>
+
+      <div class="watch-static-row">
+        <p><strong>Marca:</strong> ${escapeHtml(watch.brand || "Nao informado")}</p>
+        <p><strong>Modelo:</strong> ${escapeHtml(watch.model || "Nao informado")}</p>
+        <p><strong>Data da compra:</strong> ${escapeHtml(purchaseDateLabel)}</p>
+        <p><strong>Preco:</strong> ${escapeHtml(priceLabel)}</p>
+        <p><strong>Usa bateria:</strong> ${escapeHtml(batteryLabel)}</p>
+        <p><strong>Observacao:</strong> ${escapeHtml(noteValue || "Nenhuma")}</p>
+      </div>
+
+      <div class="watch-edit-row hidden">
         <label for="brand-${watch.id}"><strong>Marca:</strong></label>
-        <input
-          id="brand-${watch.id}"
-          class="edit-brand"
-          type="text"
-          value="${escapeHtml(watch.brand || "")}"
-          placeholder="Marca"
-        />
+        <input id="brand-${watch.id}" name="brand-${watch.id}" class="edit-brand" type="text" value="${escapeHtml(watch.brand || "")}" placeholder="Marca" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
 
         <label for="model-${watch.id}"><strong>Modelo:</strong></label>
-        <input
-          id="model-${watch.id}"
-          class="edit-model"
-          type="text"
-          value="${escapeHtml(watch.model || "")}"
-          placeholder="Modelo"
-        />
+        <input id="model-${watch.id}" name="model-${watch.id}" class="edit-model" type="text" value="${escapeHtml(watch.model || "")}" placeholder="Modelo" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
 
         <label for="purchase-date-${watch.id}"><strong>Data da compra:</strong></label>
-        <input
-          id="purchase-date-${watch.id}"
-          class="edit-purchase-date"
-          type="date"
-          value="${escapeHtml(purchaseDateValue)}"
-        />
+        <input id="purchase-date-${watch.id}" name="purchase-date-${watch.id}" class="edit-purchase-date" type="date" value="${escapeHtml(purchaseDateValue)}" autocomplete="off" />
 
-        <label for="price-${watch.id}"><strong>Preço (R$):</strong></label>
-        <input
-          id="price-${watch.id}"
-          class="edit-price"
-          type="number"
-          min="0"
-          step="0.01"
-          value="${escapeHtml(priceValue)}"
-        />
+        <label for="price-${watch.id}"><strong>Preco (R$):</strong></label>
+        <input id="price-${watch.id}" name="price-${watch.id}" class="edit-price" type="number" min="0" step="0.01" value="${escapeHtml(priceValue)}" autocomplete="off" />
 
         <label class="edit-check-row" for="has-battery-${watch.id}">
-          <input
-            id="has-battery-${watch.id}"
-            class="edit-has-battery"
-            type="checkbox"
-            ${hasBattery ? "checked" : ""}
-          />
+          <input id="has-battery-${watch.id}" name="has-battery-${watch.id}" class="edit-has-battery" type="checkbox" ${hasBattery ? "checked" : ""} autocomplete="off" />
           Usa bateria?
         </label>
 
-        <label for="battery-duration-${watch.id}"><strong>Duração da bateria:</strong></label>
+        <label for="battery-duration-${watch.id}"><strong>Duracao da bateria:</strong></label>
         <input
           id="battery-duration-${watch.id}"
+          name="battery-duration-${watch.id}"
           class="edit-battery-duration"
           type="text"
-          value="${escapeHtml(watch.batteryDuration || "")}"
+          value="${escapeHtml(watch.batteryDuration || "")}" 
           placeholder="Ex.: 2 anos"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
           ${hasBattery ? "" : "disabled"}
         />
 
-        <label for="note-${watch.id}"><strong>Observação:</strong></label>
-        <input
-          id="note-${watch.id}"
-          class="edit-note"
-          type="text"
-          value="${escapeHtml(noteValue)}"
-          placeholder="Observação"
-        />
+        <label for="note-${watch.id}"><strong>Observacao:</strong></label>
+        <input id="note-${watch.id}" name="note-${watch.id}" class="edit-note" type="text" value="${escapeHtml(noteValue)}" placeholder="Observacao" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
 
-        <p class="watch-summary"><strong>Resumo atual:</strong> ${formatCurrency(priceValue)} | ${formatDate(purchaseDateValue)}</p>
-        <button type="button" class="small-button save-watch-button">Salvar alterações</button>
+        <div class="watch-edit-actions">
+          <button type="button" class="small-button ghost cancel-edit-button">Cancelar</button>
+          <button type="button" class="small-button danger delete-watch-button">Excluir</button>
+          <button type="button" class="small-button save-watch-button">Salvar alteracoes</button>
+        </div>
       </div>
     `;
 
+    const editWatchButton = item.querySelector(".edit-watch-button");
+    const cancelEditButton = item.querySelector(".cancel-edit-button");
+    const staticRow = item.querySelector(".watch-static-row");
+    const editRow = item.querySelector(".watch-edit-row");
     const saveWatchButton = item.querySelector(".save-watch-button");
+    const deleteWatchButton = item.querySelector(".delete-watch-button");
     const editBrand = item.querySelector(".edit-brand");
     const editModel = item.querySelector(".edit-model");
     const editPurchaseDate = item.querySelector(".edit-purchase-date");
@@ -200,6 +204,18 @@ function renderWatches(watches) {
     const editHasBattery = item.querySelector(".edit-has-battery");
     const editBatteryDuration = item.querySelector(".edit-battery-duration");
     const editNote = item.querySelector(".edit-note");
+
+    editWatchButton.addEventListener("click", () => {
+      staticRow.classList.add("hidden");
+      editRow.classList.remove("hidden");
+      editWatchButton.classList.add("hidden");
+    });
+
+    cancelEditButton.addEventListener("click", () => {
+      staticRow.classList.remove("hidden");
+      editRow.classList.add("hidden");
+      editWatchButton.classList.remove("hidden");
+    });
 
     editHasBattery.addEventListener("change", () => {
       editBatteryDuration.disabled = !editHasBattery.checked;
@@ -252,6 +268,30 @@ function renderWatches(watches) {
         setFeedback(`Erro ao atualizar relógio: ${error.message}`, "error");
       } finally {
         saveWatchButton.disabled = false;
+      }
+    });
+
+    deleteWatchButton.addEventListener("click", async () => {
+      if (!currentUserId) {
+        setFeedback("Faça login para excluir relógios.", "error");
+        return;
+      }
+
+      const confirmed = window.confirm("Realmente deseja excluir este relogio?");
+      if (!confirmed) {
+        return;
+      }
+
+      deleteWatchButton.disabled = true;
+
+      try {
+        await deleteDoc(doc(db, "users", currentUserId, "watches", watch.id));
+        await loadWatches();
+        setFeedback("Relogio excluido com sucesso.", "ok");
+      } catch (error) {
+        setFeedback(`Erro ao excluir relógio: ${error.message}`, "error");
+      } finally {
+        deleteWatchButton.disabled = false;
       }
     });
 
