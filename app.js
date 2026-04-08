@@ -19,6 +19,8 @@ import {
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
+import * as utils from "./utils.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyB5Jcu5I0V5Xf--ggGiA5SDREed9WZ7fEQ",
   authDomain: "watches-9ecd7.firebaseapp.com",
@@ -77,357 +79,11 @@ function setWatchLoading(loading) {
   watchSubmitButton.textContent = loading ? "Salvando..." : "Salvar relógio";
 }
 
-function formatCurrency(value) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(value);
-}
-
-function formatDate(value) {
-  if (!value) {
-    return "Não informado";
-  }
-
-  const normalized = String(value).trim();
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(normalized)) {
-    return normalized;
-  }
-
-  const [year, month, day] = normalized.split("-");
-  if (!year || !month || !day) {
-    return normalized;
-  }
-
-  return `${day}/${month}/${year}`;
-}
-
-function toIsoDate(value) {
-  const raw = String(value ?? "").trim();
-  if (!raw) {
-    return "";
-  }
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-    return raw;
-  }
-
-  let normalized = raw;
-  if (/^\d{8}$/.test(normalized)) {
-    normalized = `${normalized.slice(0, 2)}/${normalized.slice(2, 4)}/${normalized.slice(4)}`;
-  }
-
-  const match = normalized.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (!match) {
-    return "";
-  }
-
-  const [, dayStr, monthStr, yearStr] = match;
-  const day = Number(dayStr);
-  const month = Number(monthStr);
-  const year = Number(yearStr);
-
-  if (year < 1900 || year > 2100) {
-    return "";
-  }
-
-  const candidate = new Date(year, month - 1, day);
-  if (
-    candidate.getFullYear() !== year ||
-    candidate.getMonth() !== month - 1 ||
-    candidate.getDate() !== day
-  ) {
-    return "";
-  }
-
-  return `${yearStr}-${monthStr}-${dayStr}`;
-}
-
-function toDisplayDate(value) {
-  const iso = toIsoDate(value);
-  if (!iso) {
-    return "";
-  }
-
-  const [year, month, day] = iso.split("-");
-  return `${day}/${month}/${year}`;
-}
-
-function applyDateMask(input) {
-  const digits = String(input.value ?? "").replace(/\D/g, "").slice(0, 8);
-  const day = digits.slice(0, 2);
-  const month = digits.slice(2, 4);
-  const year = digits.slice(4, 8);
-
-  let masked = day;
-  if (month) {
-    masked += `/${month}`;
-  }
-  if (year) {
-    masked += `/${year}`;
-  }
-
-  input.value = masked;
-}
-
-function formatCurrencyInput(value) {
-  const amount = Number(value);
-  if (!Number.isFinite(amount)) {
-    return "";
-  }
-
-  const safeAmount = Math.max(0, amount);
-  const centsValue = Math.round(safeAmount * 100);
-  const integerPart = Math.floor(centsValue / 100);
-  const decimalPart = String(centsValue % 100).padStart(2, "0");
-  const integerLabel = String(integerPart).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-
-  return `${integerLabel},${decimalPart}`;
-}
-
-function applyCurrencyMask(input) {
-  const digits = String(input.value ?? "").replace(/\D/g, "");
-  if (!digits) {
-    input.value = "";
-    return;
-  }
-
-  const cents = digits.slice(-2).padStart(2, "0");
-  const integerRaw = digits.length > 2 ? digits.slice(0, -2) : "0";
-  const integerPart = String(Number(integerRaw)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  input.value = `${integerPart},${cents}`;
-}
-
-function parseCurrencyInput(value) {
-  const raw = String(value ?? "").trim();
-  if (!raw) {
-    return Number.NaN;
-  }
-
-  const normalized = raw.replace(/\./g, "").replace(",", ".").replace(/[^\d.]/g, "");
-  const parsed = Number(normalized);
-  if (!Number.isFinite(parsed)) {
-    return Number.NaN;
-  }
-
-  return Number(parsed.toFixed(2));
-}
-
-function parsePrecisionInput(value) {
-  const raw = String(value ?? "").trim();
-  if (!raw) {
-    return null;
-  }
-
-  const normalized = raw.replace(",", ".");
-  const parsed = Number(normalized);
-  if (!Number.isFinite(parsed)) {
-    return Number.NaN;
-  }
-
-  return Number(parsed.toFixed(2));
-}
-
-function formatPrecisionInput(value) {
-  if (value === null || value === undefined || value === "") {
-    return "";
-  }
-
-  const numericValue = Number(value);
-  if (!Number.isFinite(numericValue)) {
-    return String(value);
-  }
-
-  const safeValue = Number.isInteger(numericValue) ? numericValue : Number(numericValue.toFixed(2));
-  return safeValue > 0 ? `+${safeValue}` : String(safeValue);
-}
-
-function escapeHtml(value) {
-  const text = String(value ?? "");
-  return text
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function formatBatteryEstimateLabel(batteryDuration) {
-  const value = String(batteryDuration ?? "").trim();
-  if (!value) {
-    return "Nao informado";
-  }
-
-  const numericValue = Number(value.replace(",", "."));
-  if (Number.isFinite(numericValue) && numericValue >= 0) {
-    const safeValue = Number.isInteger(numericValue) ? numericValue : Number(numericValue.toFixed(1));
-    return `${safeValue} ${pluralize(safeValue, "ano", "anos")}`;
-  }
-
-  return value;
-}
-
-function formatPrecisionLabel(precision) {
-  if (precision === null || precision === undefined || precision === "") {
-    return "Nao informado";
-  }
-
-  const numericValue = Number(precision);
-  if (!Number.isFinite(numericValue)) {
-    return String(precision);
-  }
-
-  const safeValue = Number.isInteger(numericValue) ? numericValue : Number(numericValue.toFixed(2));
-  return `+-${Math.abs(safeValue)} s/mes`;
-}
-
-function parseBatteryDurationToMonths(batteryDuration) {
-  const value = String(batteryDuration ?? "").trim();
-  if (!value) {
-    return null;
-  }
-
-  const normalized = value.toLowerCase().replace(",", ".");
-  const amountMatch = normalized.match(/(\d+(?:\.\d+)?)/);
-  if (!amountMatch) {
-    return null;
-  }
-
-  const amount = Number(amountMatch[1]);
-  if (!Number.isFinite(amount) || amount < 0) {
-    return null;
-  }
-
-  const asMonths = /(mes|meses|month|months)/.test(normalized);
-  const durationInMonths = asMonths ? amount : amount * 12;
-  return Math.round(durationInMonths);
-}
-
-function pluralize(value, singular, plural) {
-  return value === 1 ? singular : plural;
-}
-
-function formatAgeLabel(years, months) {
-  return `${years} ${pluralize(years, "ano", "anos")} e ${months} ${pluralize(months, "mes", "meses")}`;
-}
-
-function calculateElapsedFromDates(startDate, endDate) {
-  let years = endDate.getFullYear() - startDate.getFullYear();
-  let months = endDate.getMonth() - startDate.getMonth();
-
-  if (endDate.getDate() < startDate.getDate()) {
-    months -= 1;
-  }
-
-  if (months < 0) {
-    years -= 1;
-    months += 12;
-  }
-
-  if (years < 0) {
-    return {
-      years: 0,
-      months: 0,
-      totalMonths: 0,
-    };
-  }
-
-  return {
-    years,
-    months,
-    totalMonths: years * 12 + months,
-  };
-}
-
-function calculateAgeFromPurchase(purchaseDate, referenceDate = new Date()) {
-  const isoDate = toIsoDate(purchaseDate);
-  if (!isoDate) {
-    return null;
-  }
-
-  const [yearStr, monthStr, dayStr] = isoDate.split("-");
-  const year = Number(yearStr);
-  const month = Number(monthStr);
-  const day = Number(dayStr);
-  const purchase = new Date(year, month - 1, day);
-
-  if (Number.isNaN(purchase.getTime())) {
-    return null;
-  }
-
-  return calculateElapsedFromDates(purchase, referenceDate);
-}
-
-function calculateRemainingBatteryLife(startDateValue, batteryDuration, referenceDate = new Date()) {
-  const startIso = toIsoDate(startDateValue);
-  const durationInMonths = parseBatteryDurationToMonths(batteryDuration);
-  if (!startIso || durationInMonths === null) {
-    return null;
-  }
-
-  const [yearStr, monthStr, dayStr] = startIso.split("-");
-  const startDate = new Date(Number(yearStr), Number(monthStr) - 1, Number(dayStr));
-  if (Number.isNaN(startDate.getTime())) {
-    return null;
-  }
-
-  const replacementDate = new Date(startDate);
-  replacementDate.setMonth(replacementDate.getMonth() + durationInMonths);
-
-  const buildBatteryProgress = (remainingTotalMonths) => {
-    if (durationInMonths <= 0) {
-      return 0;
-    }
-
-    const boundedRemaining = Math.max(0, Math.min(durationInMonths, remainingTotalMonths));
-    return Math.round((boundedRemaining / durationInMonths) * 100);
-  };
-
-  if (referenceDate >= replacementDate) {
-    const overdue = calculateElapsedFromDates(replacementDate, referenceDate);
-    const remainingTotalMonths = 0;
-    return {
-      isOverdue: true,
-      remainingYears: 0,
-      remainingMonths: 0,
-      remainingTotalMonths,
-      durationMonths: durationInMonths,
-      remainingPercentage: buildBatteryProgress(remainingTotalMonths),
-      overdueYears: overdue.years,
-      overdueMonths: overdue.months,
-    };
-  }
-
-  const remaining = calculateElapsedFromDates(referenceDate, replacementDate);
-  return {
-    isOverdue: false,
-    remainingYears: remaining.years,
-    remainingMonths: remaining.months,
-    remainingTotalMonths: remaining.totalMonths,
-    durationMonths: durationInMonths,
-    remainingPercentage: buildBatteryProgress(remaining.totalMonths),
-    overdueYears: 0,
-    overdueMonths: 0,
-  };
-}
-
-function formatRemainingBatteryLabel(remainingBattery) {
-  if (!remainingBattery) {
-    return "Nao foi possivel calcular";
-  }
-
-  if (remainingBattery.isOverdue) {
-    return `Troca recomendada (atrasada em ${formatAgeLabel(remainingBattery.overdueYears, remainingBattery.overdueMonths)})`;
-  }
-
-  return `${formatAgeLabel(remainingBattery.remainingYears, remainingBattery.remainingMonths)} restantes`;
-}
-
 function renderWatches(watches) {
   watchesList.innerHTML = "";
 
   const validAges = watches
-    .map((watch) => calculateAgeFromPurchase(watch.purchaseDate))
+    .map((watch) => utils.calculateAgeFromPurchase(watch.purchaseDate))
     .filter((age) => Boolean(age));
 
   if (watchesAverageAge) {
@@ -436,7 +92,7 @@ function renderWatches(watches) {
       const averageMonths = Math.round(totalMonths / validAges.length);
       const averageYears = Math.floor(averageMonths / 12);
       const remainingMonths = averageMonths % 12;
-      watchesAverageAge.textContent = `Media de idade dos relogios: ${formatAgeLabel(averageYears, remainingMonths)}.`;
+      watchesAverageAge.textContent = `Média de idade dos relógios: ${utils.formatAgeLabel(averageYears, remainingMonths)}.`;
       watchesAverageAge.classList.remove("hidden");
     } else {
       watchesAverageAge.textContent = "";
@@ -457,7 +113,7 @@ function renderWatches(watches) {
     const hasBattery = Boolean(watch.hasBattery);
     const noteValue = watch.note || "";
     const purchaseDateValue = watch.purchaseDate || "";
-    const purchaseDateInputValue = toDisplayDate(purchaseDateValue);
+    const purchaseDateInputValue = utils.toDisplayDate(purchaseDateValue);
     const hasValidPrice =
       watch.price !== null &&
       watch.price !== undefined &&
@@ -465,18 +121,18 @@ function renderWatches(watches) {
       Number.isFinite(Number(watch.price)) &&
       Number(watch.price) >= 0;
     const priceValue = hasValidPrice ? Number(watch.price) : null;
-    const priceInputValue = hasValidPrice ? formatCurrencyInput(priceValue) : "";
-    const purchaseDateLabel = formatDate(purchaseDateValue);
-    const priceLabel = hasValidPrice ? formatCurrency(priceValue) : "Nao informado";
-    const precisionLabel = escapeHtml(formatPrecisionLabel(watch.precision));
-    const batteryEstimateLabel = formatBatteryEstimateLabel(watch.batteryDuration || "");
+    const priceInputValue = hasValidPrice ? utils.formatCurrencyInput(priceValue) : "";
+    const purchaseDateLabel = utils.formatDate(purchaseDateValue);
+    const priceLabel = hasValidPrice ? utils.formatCurrency(priceValue) : "Não informado";
+    const precisionLabel = utils.escapeHtml(utils.formatPrecisionLabel(watch.precision));
+    const batteryEstimateLabel = utils.formatBatteryEstimateLabel(watch.batteryDuration || "");
     const lastBatteryChangeDateValue = watch.lastBatteryChangeDate || "";
     const batteryStartDate = lastBatteryChangeDateValue || purchaseDateValue;
-    const lastBatteryChangeLabel = lastBatteryChangeDateValue ? formatDate(lastBatteryChangeDateValue) : "Nao informada";
+    const lastBatteryChangeLabel = lastBatteryChangeDateValue ? utils.formatDate(lastBatteryChangeDateValue) : "Não informada";
     const remainingBattery = hasBattery
-      ? calculateRemainingBatteryLife(batteryStartDate, watch.batteryDuration || "")
+      ? utils.calculateRemainingBatteryLife(batteryStartDate, watch.batteryDuration || "")
       : null;
-    const remainingBatteryLabel = hasBattery ? formatRemainingBatteryLabel(remainingBattery) : "Nao se aplica";
+    const remainingBatteryLabel = hasBattery ? utils.formatRemainingBatteryLabel(remainingBattery) : "Não se aplica";
     const batteryRemainingClass = hasBattery ? "watch-remaining-time" : "watch-remaining-time no-battery";
     const batteryProgressPercentage = remainingBattery ? remainingBattery.remainingPercentage : null;
     const batteryMeterClass = remainingBattery
@@ -494,55 +150,55 @@ function renderWatches(watches) {
         </span>
       `
       : "";
-    const watchAge = calculateAgeFromPurchase(purchaseDateValue);
-    const watchAgeLabel = watchAge ? formatAgeLabel(watchAge.years, watchAge.months) : "Nao foi possivel calcular";
+    const watchAge = utils.calculateAgeFromPurchase(purchaseDateValue);
+    const watchAgeLabel = watchAge ? utils.formatAgeLabel(watchAge.years, watchAge.months) : "Não foi possível calcular";
     const manufacturerDetails = hasBattery
       ? `
-        <p><strong>Precisao:</strong> ${precisionLabel}</p>
-        <p><strong>Duracao da bateria:</strong> ${escapeHtml(batteryEstimateLabel)}</p>
+        <p><strong>Precisão:</strong> ${precisionLabel}</p>
+        <p><strong>Duração da bateria:</strong> ${utils.escapeHtml(batteryEstimateLabel)}</p>
       `
       : `
-        <p><strong>Precisao:</strong> ${precisionLabel}</p>
+        <p><strong>Precisão:</strong> ${precisionLabel}</p>
         <p><strong>Tipo de energia:</strong> Sem bateria</p>
       `;
-    const watchBrandLabel = escapeHtml(watch.brand || "Sem marca");
-    const watchModelLabel = escapeHtml(watch.model || "Sem modelo");
+    const watchBrandLabel = utils.escapeHtml(watch.brand || "Sem marca");
+    const watchModelLabel = utils.escapeHtml(watch.model || "Sem modelo");
 
     item.innerHTML = `
       <div class="watch-card-header">
         <div class="watch-title-wrap">
-          <span class="watch-kicker">Relogio</span>
+          <span class="watch-kicker">Relógio</span>
           <p class="watch-title"><span class="watch-brand">${watchBrandLabel}</span> <span class="watch-model">${watchModelLabel}</span></p>
         </div>
-        <button type="button" class="small-button edit-watch-button" aria-label="Editar relogio" title="Editar relogio">&#9998;</button>
+        <button type="button" class="small-button edit-watch-button" aria-label="Editar relógio" title="Editar relógio">&#9998;</button>
       </div>
 
       <div class="watch-static-row">
-        <section class="watch-section-block watch-status-block" aria-label="Status atual do relogio">
+        <section class="watch-section-block watch-status-block" aria-label="Status atual do relógio">
           <h4 class="watch-section-title">Status atual</h4>
           <div class="watch-status-grid">
-            <p class="watch-metric"><strong>Idade:</strong> ${escapeHtml(watchAgeLabel)}</p>
-            <p class="watch-metric"><strong>Tempo restante da bateria:</strong> <span class="${batteryRemainingClass}">${escapeHtml(remainingBatteryLabel)}</span>${batteryProgressMarkup}</p>
+            <p class="watch-metric"><strong>Idade:</strong> ${utils.escapeHtml(watchAgeLabel)}</p>
+            <p class="watch-metric"><strong>Tempo restante da bateria:</strong> <span class="${batteryRemainingClass}">${utils.escapeHtml(remainingBatteryLabel)}</span>${batteryProgressMarkup}</p>
           </div>
         </section>
 
         <details class="watch-details-menu">
-          <summary>Mais informacoes</summary>
+          <summary>Mais informações</summary>
           <div class="watch-info-grid">
-            <section class="watch-section-block watch-manufacturer-block" aria-label="Informacoes do fabricante">
-              <h4 class="watch-section-title">Informacoes do fabricante</h4>
+            <section class="watch-section-block watch-manufacturer-block" aria-label="Informações do fabricante">
+              <h4 class="watch-section-title">Informações do fabricante</h4>
               <div class="watch-data-list">
                 ${manufacturerDetails}
               </div>
             </section>
 
-            <section class="watch-section-block watch-user-block" aria-label="Informacoes do usuario">
-              <h4 class="watch-section-title">Informacoes do usuario</h4>
+            <section class="watch-section-block watch-user-block" aria-label="Informações do usuário">
+              <h4 class="watch-section-title">Informações do usuário</h4>
               <div class="watch-data-list">
-                <p><strong>Data da compra:</strong> ${escapeHtml(purchaseDateLabel)}</p>
-                <p><strong>Preco:</strong> ${escapeHtml(priceLabel)}</p>
-                <p><strong>Ultima troca de bateria:</strong> ${escapeHtml(lastBatteryChangeLabel)}</p>
-                <p><strong>Observacao:</strong> ${escapeHtml(noteValue || "Nenhuma")}</p>
+                <p><strong>Data da compra:</strong> ${utils.escapeHtml(purchaseDateLabel)}</p>
+                <p><strong>Preço:</strong> ${utils.escapeHtml(priceLabel)}</p>
+                <p><strong>Última troca de bateria:</strong> ${utils.escapeHtml(lastBatteryChangeLabel)}</p>
+                <p><strong>Observação:</strong> ${utils.escapeHtml(noteValue || "Nenhuma")}</p>
               </div>
             </section>
           </div>
@@ -551,32 +207,32 @@ function renderWatches(watches) {
 
       <div class="watch-edit-row hidden">
         <label for="brand-${watch.id}"><strong>Marca:</strong></label>
-        <input id="brand-${watch.id}" name="brand-${watch.id}" class="edit-brand" type="text" value="${escapeHtml(watch.brand || "")}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+        <input id="brand-${watch.id}" name="brand-${watch.id}" class="edit-brand" type="text" value="${utils.escapeHtml(watch.brand || "")}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
 
         <label for="model-${watch.id}"><strong>Modelo:</strong></label>
-        <input id="model-${watch.id}" name="model-${watch.id}" class="edit-model" type="text" value="${escapeHtml(watch.model || "")}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+        <input id="model-${watch.id}" name="model-${watch.id}" class="edit-model" type="text" value="${utils.escapeHtml(watch.model || "")}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
 
-        <label for="precision-${watch.id}"><strong>Precisao mensal (s/mes, +-):</strong></label>
-        <input id="precision-${watch.id}" name="precision-${watch.id}" class="edit-precision" type="text" inputmode="decimal" value="${escapeHtml(formatPrecisionInput(watch.precision))}" placeholder="+-" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+        <label for="precision-${watch.id}"><strong>Precisão mensal (s/mês, +-):</strong></label>
+        <input id="precision-${watch.id}" name="precision-${watch.id}" class="edit-precision" type="text" inputmode="decimal" value="${utils.escapeHtml(utils.formatPrecisionInput(watch.precision))}" placeholder="+-" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
 
         <label for="purchase-date-${watch.id}"><strong>Data da compra:</strong></label>
-        <input id="purchase-date-${watch.id}" name="purchase-date-${watch.id}" class="edit-purchase-date" type="text" inputmode="numeric" maxlength="10" value="${escapeHtml(purchaseDateInputValue)}" autocomplete="off" />
+        <input id="purchase-date-${watch.id}" name="purchase-date-${watch.id}" class="edit-purchase-date" type="text" inputmode="numeric" maxlength="10" value="${utils.escapeHtml(purchaseDateInputValue)}" autocomplete="off" />
 
-        <label for="price-${watch.id}"><strong>Preco (R$):</strong></label>
-        <input id="price-${watch.id}" name="price-${watch.id}" class="edit-price" type="text" inputmode="decimal" maxlength="20" value="${escapeHtml(priceInputValue)}" autocomplete="off" />
+        <label for="price-${watch.id}"><strong>Preço (R$):</strong></label>
+        <input id="price-${watch.id}" name="price-${watch.id}" class="edit-price" type="text" inputmode="decimal" maxlength="20" value="${utils.escapeHtml(priceInputValue)}" autocomplete="off" />
 
         <label class="edit-check-row" for="has-battery-${watch.id}">
           <input id="has-battery-${watch.id}" name="has-battery-${watch.id}" class="edit-has-battery" type="checkbox" ${hasBattery ? "checked" : ""} autocomplete="off" />
           Usa bateria?
         </label>
 
-        <label for="battery-duration-${watch.id}"><strong>Duracao da bateria:</strong></label>
+        <label for="battery-duration-${watch.id}"><strong>Duração da bateria:</strong></label>
         <input
           id="battery-duration-${watch.id}"
           name="battery-duration-${watch.id}"
           class="edit-battery-duration"
           type="text"
-          value="${escapeHtml(watch.batteryDuration || "")}" 
+          value="${utils.escapeHtml(watch.batteryDuration || "")}" 
           autocomplete="off"
           autocorrect="off"
           autocapitalize="off"
@@ -584,7 +240,7 @@ function renderWatches(watches) {
           ${hasBattery ? "" : "disabled"}
         />
 
-        <label for="last-battery-change-date-${watch.id}"><strong>Data da ultima troca de bateria:</strong></label>
+        <label for="last-battery-change-date-${watch.id}"><strong>Data da última troca de bateria:</strong></label>
         <input
           id="last-battery-change-date-${watch.id}"
           name="last-battery-change-date-${watch.id}"
@@ -592,18 +248,18 @@ function renderWatches(watches) {
           type="text"
           inputmode="numeric"
           maxlength="10"
-          value="${escapeHtml(toDisplayDate(lastBatteryChangeDateValue))}"
+          value="${utils.escapeHtml(utils.toDisplayDate(lastBatteryChangeDateValue))}"
           autocomplete="off"
           ${hasBattery ? "" : "disabled"}
         />
 
-        <label for="note-${watch.id}"><strong>Observacao:</strong></label>
-        <input id="note-${watch.id}" name="note-${watch.id}" class="edit-note" type="text" value="${escapeHtml(noteValue)}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+        <label for="note-${watch.id}"><strong>Observação:</strong></label>
+        <input id="note-${watch.id}" name="note-${watch.id}" class="edit-note" type="text" value="${utils.escapeHtml(noteValue)}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
 
         <div class="watch-edit-actions">
           <button type="button" class="small-button ghost cancel-edit-button">Cancelar</button>
           <button type="button" class="small-button danger delete-watch-button">Excluir</button>
-          <button type="button" class="small-button save-watch-button">Salvar alteracoes</button>
+          <button type="button" class="small-button save-watch-button">Salvar alterações</button>
         </div>
       </div>
     `;
@@ -625,15 +281,15 @@ function renderWatches(watches) {
     const editNote = item.querySelector(".edit-note");
 
     editPurchaseDate.addEventListener("input", () => {
-      applyDateMask(editPurchaseDate);
+      utils.applyDateMask(editPurchaseDate);
     });
 
     editPrice.addEventListener("input", () => {
-      applyCurrencyMask(editPrice);
+      utils.applyCurrencyMask(editPrice);
     });
 
     editLastBatteryChangeDate.addEventListener("input", () => {
-      applyDateMask(editLastBatteryChangeDate);
+      utils.applyDateMask(editLastBatteryChangeDate);
     });
 
     editWatchButton.addEventListener("click", () => {
@@ -666,14 +322,14 @@ function renderWatches(watches) {
       const brand = editBrand.value.trim();
       const model = editModel.value.trim();
       const precisionRaw = editPrecision.value.trim();
-      const precision = precisionRaw ? parsePrecisionInput(precisionRaw) : null;
-      const purchaseDate = toIsoDate(editPurchaseDate.value);
+      const precision = precisionRaw ? utils.parsePrecisionInput(precisionRaw) : null;
+      const purchaseDate = utils.toIsoDate(editPurchaseDate.value);
       const priceRaw = editPrice.value.trim();
-      const price = priceRaw ? parseCurrencyInput(priceRaw) : null;
+      const price = priceRaw ? utils.parseCurrencyInput(priceRaw) : null;
       const hasBatteryValue = editHasBattery.checked;
       const batteryDuration = editBatteryDuration.value.trim();
       const lastBatteryChangeDateRaw = editLastBatteryChangeDate.value.trim();
-      const lastBatteryChangeDate = toIsoDate(lastBatteryChangeDateRaw);
+      const lastBatteryChangeDate = utils.toIsoDate(lastBatteryChangeDateRaw);
       const note = editNote.value.trim();
 
       if (!brand || !model || !purchaseDate) {
@@ -687,7 +343,7 @@ function renderWatches(watches) {
       }
 
       if (precisionRaw && Number.isNaN(precision)) {
-        setFeedback("Informe a precisao em segundos por mes usando + ou - (ex.: +20 ou -15).", "error");
+        setFeedback("Informe a precisão em segundos por mês usando + ou - (ex.: +20 ou -15).", "error");
         return;
       }
 
@@ -737,7 +393,7 @@ function renderWatches(watches) {
         return;
       }
 
-      const confirmed = window.confirm("Realmente deseja excluir este relogio?");
+      const confirmed = window.confirm("Realmente deseja excluir este relógio?");
       if (!confirmed) {
         return;
       }
@@ -747,7 +403,7 @@ function renderWatches(watches) {
       try {
         await deleteDoc(doc(db, "users", currentUserId, "watches", watch.id));
         await loadWatches();
-        setFeedback("Relogio excluido com sucesso.", "ok");
+        setFeedback("Relógio excluído com sucesso.", "ok");
       } catch (error) {
         setFeedback(`Erro ao excluir relógio: ${error.message}`, "error");
       } finally {
@@ -856,14 +512,14 @@ watchForm.addEventListener("submit", async (event) => {
   const brand = brandInput.value.trim();
   const model = modelInput.value.trim();
   const precisionRaw = precisionInput.value.trim();
-  const precision = precisionRaw ? parsePrecisionInput(precisionRaw) : null;
-  const purchaseDate = toIsoDate(purchaseDateInput.value);
+  const precision = precisionRaw ? utils.parsePrecisionInput(precisionRaw) : null;
+  const purchaseDate = utils.toIsoDate(purchaseDateInput.value);
   const priceRaw = priceInput.value.trim();
-  const price = priceRaw ? parseCurrencyInput(priceRaw) : null;
+  const price = priceRaw ? utils.parseCurrencyInput(priceRaw) : null;
   const hasBattery = hasBatteryInput.checked;
   const batteryDuration = batteryDurationInput.value.trim();
   const lastBatteryChangeDateRaw = lastBatteryChangeDateInput.value.trim();
-  const lastBatteryChangeDate = toIsoDate(lastBatteryChangeDateRaw);
+  const lastBatteryChangeDate = utils.toIsoDate(lastBatteryChangeDateRaw);
 
   if (!brand || !model || !purchaseDate) {
     setFeedback("Preencha marca, modelo e data da compra.", "error");
@@ -876,7 +532,7 @@ watchForm.addEventListener("submit", async (event) => {
   }
 
   if (precisionRaw && Number.isNaN(precision)) {
-    setFeedback("Informe a precisao em segundos por mes usando + ou - (ex.: +20 ou -15).", "error");
+    setFeedback("Informe a precisão em segundos por mês usando + ou - (ex.: +20 ou -15).", "error");
     return;
   }
 
@@ -945,15 +601,15 @@ onAuthStateChanged(auth, (user) => {
 });
 
 purchaseDateInput.addEventListener("input", () => {
-  applyDateMask(purchaseDateInput);
+  utils.applyDateMask(purchaseDateInput);
 });
 
 lastBatteryChangeDateInput.addEventListener("input", () => {
-  applyDateMask(lastBatteryChangeDateInput);
+  utils.applyDateMask(lastBatteryChangeDateInput);
 });
 
 priceInput.addEventListener("input", () => {
-  applyCurrencyMask(priceInput);
+  utils.applyCurrencyMask(priceInput);
 });
 
 if ("serviceWorker" in navigator) {
