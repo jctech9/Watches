@@ -78,6 +78,18 @@ export function toDisplayDate(value) {
   return `${day}/${month}/${year}`;
 }
 
+export function getTodayIsoDate(referenceDate = new Date()) {
+  const year = referenceDate.getFullYear();
+  const month = String(referenceDate.getMonth() + 1).padStart(2, "0");
+  const day = String(referenceDate.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export function isFutureIsoDate(value, referenceDate = new Date()) {
+  const iso = toIsoDate(value);
+  return Boolean(iso && iso > getTodayIsoDate(referenceDate));
+}
+
 export function applyDateMask(input) {
   const digits = String(input.value ?? "").replace(/\D/g, "").slice(0, 8);
   const day = digits.slice(0, 2);
@@ -213,17 +225,18 @@ export function parseBatteryDurationToMonths(batteryDuration) {
   }
 
   const normalized = value.toLowerCase().replace(",", ".");
-  const amountMatch = normalized.match(/(\d+(?:\.\d+)?)/);
-  if (!amountMatch) {
+  const durationMatch = normalized.match(/^(\d+(?:\.\d+)?)\s*(anos?|years?|mes(?:es)?|mês|months?)?$/);
+  if (!durationMatch) {
     return null;
   }
 
-  const amount = Number(amountMatch[1]);
-  if (!Number.isFinite(amount) || amount < 0) {
+  const amount = Number(durationMatch[1]);
+  if (!Number.isFinite(amount) || amount <= 0) {
     return null;
   }
 
-  const asMonths = /(mes|mês|meses|month|months)/.test(normalized);
+  const unit = durationMatch[2] || "";
+  const asMonths = /^(mes|meses|mês|month|months)$/.test(unit);
   const durationInMonths = asMonths ? amount : amount * 12;
   return Math.round(durationInMonths);
 }

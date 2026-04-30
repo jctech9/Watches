@@ -1,5 +1,5 @@
-const APP_CACHE = "watches-app-v1";
-const RUNTIME_CACHE = "watches-runtime-v1";
+const APP_CACHE = "watches-app-v2";
+const RUNTIME_CACHE = "watches-runtime-v2";
 
 const APP_SHELL = [
   "./",
@@ -11,6 +11,20 @@ const APP_SHELL = [
   "./assets/icons/icon-192.png",
   "./assets/icons/icon-512.png"
 ];
+
+function canCacheResponse(response) {
+  return response && response.status === 200 && ["basic", "cors"].includes(response.type);
+}
+
+function offlineResponse() {
+  return new Response("Recurso indisponível offline.", {
+    status: 503,
+    statusText: "Service Unavailable",
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+    },
+  });
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -41,8 +55,10 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          const responseClone = response.clone();
-          caches.open(RUNTIME_CACHE).then((cache) => cache.put(event.request, responseClone));
+          if (canCacheResponse(response)) {
+            const responseClone = response.clone();
+            caches.open(RUNTIME_CACHE).then((cache) => cache.put(event.request, responseClone));
+          }
           return response;
         })
         .catch(async () => {
@@ -68,11 +84,13 @@ self.addEventListener("fetch", (event) => {
             return response;
           }
 
-          const copy = response.clone();
-          caches.open(RUNTIME_CACHE).then((cache) => cache.put(event.request, copy));
+          if (canCacheResponse(response)) {
+            const copy = response.clone();
+            caches.open(RUNTIME_CACHE).then((cache) => cache.put(event.request, copy));
+          }
           return response;
         })
-        .catch(() => caches.match("./index.html"));
+        .catch(() => offlineResponse());
     })
   );
 });

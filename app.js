@@ -58,6 +58,7 @@ const priceInput = document.getElementById("price");
 const hasBatteryInput = document.getElementById("has-battery");
 const batteryDurationInput = document.getElementById("battery-duration");
 const lastBatteryChangeDateInput = document.getElementById("last-battery-change-date");
+const noteInput = document.getElementById("note");
 const watchesList = document.getElementById("watches-list");
 const watchesAverageAge = document.getElementById("watches-average-age");
 const watchSubmitButton = document.getElementById("watch-submit-button");
@@ -77,6 +78,86 @@ function setLoading(loading) {
 function setWatchLoading(loading) {
   watchSubmitButton.disabled = loading;
   watchSubmitButton.textContent = loading ? "Salvando..." : "Salvar relógio";
+}
+
+function getWatchValues(fields) {
+  const precisionRaw = fields.precision.value.trim();
+  const priceRaw = fields.price.value.trim();
+  const lastBatteryChangeDateRaw = fields.lastBatteryChangeDate.value.trim();
+
+  return {
+    brand: fields.brand.value.trim(),
+    model: fields.model.value.trim(),
+    precisionRaw,
+    precision: precisionRaw ? utils.parsePrecisionInput(precisionRaw) : null,
+    purchaseDateRaw: fields.purchaseDate.value.trim(),
+    purchaseDate: utils.toIsoDate(fields.purchaseDate.value),
+    priceRaw,
+    price: priceRaw ? utils.parseCurrencyInput(priceRaw) : null,
+    hasBattery: fields.hasBattery.checked,
+    batteryDuration: fields.batteryDuration.value.trim(),
+    lastBatteryChangeDateRaw,
+    lastBatteryChangeDate: utils.toIsoDate(lastBatteryChangeDateRaw),
+    note: fields.note ? fields.note.value.trim() : "",
+  };
+}
+
+function validateWatchValues(values) {
+  if (!values.brand || !values.model || !values.purchaseDateRaw) {
+    return "Preencha marca, modelo e data da compra.";
+  }
+
+  if (!values.purchaseDate) {
+    return "Informe uma data de compra válida.";
+  }
+
+  if (utils.isFutureIsoDate(values.purchaseDate)) {
+    return "A data da compra não pode ser futura.";
+  }
+
+  if (values.priceRaw && (Number.isNaN(values.price) || values.price < 0)) {
+    return "Informe um preço válido ou deixe o campo em branco.";
+  }
+
+  if (values.precisionRaw && Number.isNaN(values.precision)) {
+    return "Informe a precisão em segundos por mês usando + ou - (ex.: +20 ou -15).";
+  }
+
+  if (values.hasBattery) {
+    const batteryDurationMonths = utils.parseBatteryDurationToMonths(values.batteryDuration);
+
+    if (!values.batteryDuration || batteryDurationMonths === null) {
+      return "Informe a duração da bateria em anos ou meses (ex.: 3 anos ou 36 meses).";
+    }
+
+    if (values.lastBatteryChangeDateRaw && !values.lastBatteryChangeDate) {
+      return "Informe uma data válida para a última troca de bateria.";
+    }
+
+    if (values.lastBatteryChangeDate && utils.isFutureIsoDate(values.lastBatteryChangeDate)) {
+      return "A data da última troca não pode ser futura.";
+    }
+
+    if (values.lastBatteryChangeDate && values.lastBatteryChangeDate < values.purchaseDate) {
+      return "A data da última troca não pode ser anterior à data da compra.";
+    }
+  }
+
+  return "";
+}
+
+function buildWatchDocument(values) {
+  return {
+    brand: values.brand,
+    model: values.model,
+    precision: values.precision,
+    purchaseDate: values.purchaseDate,
+    price: values.price,
+    hasBattery: values.hasBattery,
+    batteryDuration: values.hasBattery ? values.batteryDuration : null,
+    lastBatteryChangeDate: values.hasBattery ? (values.lastBatteryChangeDate || null) : null,
+    note: values.note,
+  };
 }
 
 function renderWatches(watches) {
@@ -237,6 +318,7 @@ function renderWatches(watches) {
           autocorrect="off"
           autocapitalize="off"
           spellcheck="false"
+          placeholder="ex.: 3 anos ou 36 meses"
           ${hasBattery ? "" : "disabled"}
         />
 
@@ -319,46 +401,21 @@ function renderWatches(watches) {
         return;
       }
 
-      const brand = editBrand.value.trim();
-      const model = editModel.value.trim();
-      const precisionRaw = editPrecision.value.trim();
-      const precision = precisionRaw ? utils.parsePrecisionInput(precisionRaw) : null;
-      const purchaseDate = utils.toIsoDate(editPurchaseDate.value);
-      const priceRaw = editPrice.value.trim();
-      const price = priceRaw ? utils.parseCurrencyInput(priceRaw) : null;
-      const hasBatteryValue = editHasBattery.checked;
-      const batteryDuration = editBatteryDuration.value.trim();
-      const lastBatteryChangeDateRaw = editLastBatteryChangeDate.value.trim();
-      const lastBatteryChangeDate = utils.toIsoDate(lastBatteryChangeDateRaw);
-      const note = editNote.value.trim();
+      const watchValues = getWatchValues({
+        brand: editBrand,
+        model: editModel,
+        precision: editPrecision,
+        purchaseDate: editPurchaseDate,
+        price: editPrice,
+        hasBattery: editHasBattery,
+        batteryDuration: editBatteryDuration,
+        lastBatteryChangeDate: editLastBatteryChangeDate,
+        note: editNote,
+      });
+      const validationMessage = validateWatchValues(watchValues);
 
-      if (!brand || !model || !purchaseDate) {
-        setFeedback("Preencha marca, modelo e data da compra antes de salvar.", "error");
-        return;
-      }
-
-      if (priceRaw && (Number.isNaN(price) || price < 0)) {
-        setFeedback("Informe um preço válido ou deixe o campo em branco.", "error");
-        return;
-      }
-
-      if (precisionRaw && Number.isNaN(precision)) {
-        setFeedback("Informe a precisão em segundos por mês usando + ou - (ex.: +20 ou -15).", "error");
-        return;
-      }
-
-      if (hasBatteryValue && !batteryDuration) {
-        setFeedback("Informe a duração da bateria ou desmarque a opção de bateria.", "error");
-        return;
-      }
-
-      if (hasBatteryValue && lastBatteryChangeDateRaw && !lastBatteryChangeDate) {
-        setFeedback("Informe uma data válida para a última troca de bateria.", "error");
-        return;
-      }
-
-      if (hasBatteryValue && lastBatteryChangeDate && lastBatteryChangeDate < purchaseDate) {
-        setFeedback("A data da última troca não pode ser anterior à data da compra.", "error");
+      if (validationMessage) {
+        setFeedback(validationMessage, "error");
         return;
       }
 
@@ -366,15 +423,7 @@ function renderWatches(watches) {
 
       try {
         await updateDoc(doc(db, "users", currentUserId, "watches", watch.id), {
-          brand,
-          model,
-          precision,
-          purchaseDate,
-          price,
-          hasBattery: hasBatteryValue,
-          batteryDuration: hasBatteryValue ? batteryDuration : null,
-          lastBatteryChangeDate: hasBatteryValue ? (lastBatteryChangeDate || null) : null,
-          note,
+          ...buildWatchDocument(watchValues),
           updatedAt: serverTimestamp(),
         });
 
@@ -509,45 +558,21 @@ watchForm.addEventListener("submit", async (event) => {
     return;
   }
 
-  const brand = brandInput.value.trim();
-  const model = modelInput.value.trim();
-  const precisionRaw = precisionInput.value.trim();
-  const precision = precisionRaw ? utils.parsePrecisionInput(precisionRaw) : null;
-  const purchaseDate = utils.toIsoDate(purchaseDateInput.value);
-  const priceRaw = priceInput.value.trim();
-  const price = priceRaw ? utils.parseCurrencyInput(priceRaw) : null;
-  const hasBattery = hasBatteryInput.checked;
-  const batteryDuration = batteryDurationInput.value.trim();
-  const lastBatteryChangeDateRaw = lastBatteryChangeDateInput.value.trim();
-  const lastBatteryChangeDate = utils.toIsoDate(lastBatteryChangeDateRaw);
+  const watchValues = getWatchValues({
+    brand: brandInput,
+    model: modelInput,
+    precision: precisionInput,
+    purchaseDate: purchaseDateInput,
+    price: priceInput,
+    hasBattery: hasBatteryInput,
+    batteryDuration: batteryDurationInput,
+    lastBatteryChangeDate: lastBatteryChangeDateInput,
+    note: noteInput,
+  });
+  const validationMessage = validateWatchValues(watchValues);
 
-  if (!brand || !model || !purchaseDate) {
-    setFeedback("Preencha marca, modelo e data da compra.", "error");
-    return;
-  }
-
-  if (priceRaw && (Number.isNaN(price) || price < 0)) {
-    setFeedback("Informe um preço válido ou deixe o campo em branco.", "error");
-    return;
-  }
-
-  if (precisionRaw && Number.isNaN(precision)) {
-    setFeedback("Informe a precisão em segundos por mês usando + ou - (ex.: +20 ou -15).", "error");
-    return;
-  }
-
-  if (hasBattery && !batteryDuration) {
-    setFeedback("Informe a duração da bateria ou desmarque a opção de bateria.", "error");
-    return;
-  }
-
-  if (hasBattery && lastBatteryChangeDateRaw && !lastBatteryChangeDate) {
-    setFeedback("Informe uma data válida para a última troca de bateria.", "error");
-    return;
-  }
-
-  if (hasBattery && lastBatteryChangeDate && lastBatteryChangeDate < purchaseDate) {
-    setFeedback("A data da última troca não pode ser anterior à data da compra.", "error");
+  if (validationMessage) {
+    setFeedback(validationMessage, "error");
     return;
   }
 
@@ -557,14 +582,7 @@ watchForm.addEventListener("submit", async (event) => {
     const watchDocRef = doc(collection(db, "users", currentUserId, "watches"));
 
     await setDoc(watchDocRef, {
-      brand,
-      model,
-      precision,
-      purchaseDate,
-      price,
-      hasBattery,
-      batteryDuration: hasBattery ? batteryDuration : null,
-      lastBatteryChangeDate: hasBattery ? (lastBatteryChangeDate || null) : null,
+      ...buildWatchDocument(watchValues),
       createdAt: serverTimestamp(),
     });
 
