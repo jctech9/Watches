@@ -1,5 +1,5 @@
-const APP_CACHE = "watches-app-v2";
-const RUNTIME_CACHE = "watches-runtime-v2";
+const APP_CACHE = "watches-app-v3";
+const RUNTIME_CACHE = "watches-runtime-v3";
 
 const APP_SHELL = [
   "./",

@@ -7,7 +7,7 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <title>Watches - Login</title>
+    <title>Watches - Gerenciador de relógios</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png" />
     <link rel="apple-touch-icon" href="./assets/icons/icon-192.png" />
@@ -20,98 +20,269 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="auth-page">
-      <section class="auth-card">
-        <header class="auth-header">
-          <p class="eyebrow">Watches</p>
+    <main class="app-shell">
+      <section id="login-view" class="login-view" aria-labelledby="login-title">
+        <div class="login-brand">
+          <span class="brand-mark" aria-hidden="true">W</span>
+          <span class="brand-name">Watches</span>
+        </div>
+
+        <section class="login-card">
+          <div class="login-copy">
+            <p class="eyebrow">Coleção pessoal</p>
+            <h1 id="login-title">Acesse sua coleção de relógios</h1>
+            <p>
+              Organize modelos, compras, precisão e ciclos de bateria em uma interface limpa
+              e pronta para consulta rápida.
+            </p>
+          </div>
+
+          <form
+            id="login-form"
+            class="auth-form"
+            novalidate
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+          >
+            <input
+              type="text"
+              name="prevent_autofill_username"
+              id="prevent_autofill_username"
+              autocomplete="username"
+              class="visually-hidden-field"
+              aria-hidden="true"
+              tabindex="-1"
+            />
+            <input
+              type="password"
+              name="prevent_autofill_password"
+              id="prevent_autofill_password"
+              autocomplete="current-password"
+              class="visually-hidden-field"
+              aria-hidden="true"
+              tabindex="-1"
+            />
+
+            <div class="form-field">
+              <label for="email">Usuário ou e-mail</label>
+              <input
+                id="email"
+                name="email"
+                type="text"
+                inputmode="email"
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
+                required
+              />
+            </div>
+
+            <div class="form-field">
+              <label for="password">Senha</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autocomplete="new-password"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
+                required
+                minlength="6"
+              />
+            </div>
+
+            <button id="submit-button" type="submit" class="primary-action">Entrar</button>
+          </form>
+        </section>
+      </section>
+
+      <section id="dashboard-view" class="dashboard-view hidden">
+        <header id="user-panel" class="app-header user-panel hidden" aria-live="polite">
+          <a class="brand-lockup" href="#watches-panel" aria-label="Ir para o painel Watches">
+            <span class="brand-mark" aria-hidden="true">W</span>
+            <span>
+              <strong>Watches</strong>
+              <small id="welcome-message"></small>
+            </span>
+          </a>
+
+          <nav class="header-actions" aria-label="Ações principais">
+            <a class="button-link ghost" href="#watch-form">Adicionar relógio</a>
+            <button id="logout-button" type="button" class="ghost">Sair</button>
+          </nav>
         </header>
 
-        <form id="login-form" class="auth-form" novalidate autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-          <!-- Campos ocultos para capturar autofill do navegador e evitar sugestões nos campos visíveis -->
-          <input type="text" name="prevent_autofill_username" id="prevent_autofill_username" autocomplete="username" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;border:0;" aria-hidden="true" tabindex="-1">
-          <input type="password" name="prevent_autofill_password" id="prevent_autofill_password" autocomplete="current-password" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;border:0;" aria-hidden="true" tabindex="-1">
-          <label for="email">Usuário</label>
-          <input id="email" name="email" type="text" inputmode="email" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" required />
-
-          <label for="password">Senha</label>
-          <input id="password" name="password" type="password" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" required minlength="6" />
-
-          <button id="submit-button" type="submit">Entrar</button>
-        </form>
-
-        <section id="user-panel" class="user-panel hidden" aria-live="polite">
-          <p id="welcome-message"></p>
-          <button id="logout-button" type="button" class="ghost">Sair</button>
-        </section>
-
         <section id="watches-panel" class="watches-panel hidden" aria-live="polite">
-          <h2>Meus relógios de pulso</h2>
-
-          <form id="watch-form" class="watch-form" novalidate autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-            <label for="brand">Marca</label>
-            <input id="brand" name="brand" type="text" autocomplete="off" required />
-
-            <label for="model">Modelo</label>
-            <input id="model" name="model" type="text" autocomplete="off" required />
-
-            <label for="precision">Precisão mensal (segundos, +-)</label>
-            <input id="precision" name="precision" type="text" inputmode="decimal" autocomplete="off" placeholder="+-" />
-
-            <label for="purchase-date">Data da compra</label>
-            <input
-              id="purchase-date"
-              name="purchaseDate"
-              type="text"
-              inputmode="numeric"
-              maxlength="10"
-              autocomplete="off"
-              required
-            />
-
-            <label for="price">Preço (R$)</label>
-            <input id="price" name="price" type="text" inputmode="decimal" maxlength="20" autocomplete="off" />
-
-            <label class="check-row" for="has-battery">
-              <input id="has-battery" name="hasBattery" type="checkbox" />
-              Usa bateria?
-            </label>
-
-            <label for="battery-duration">Duração da bateria</label>
-            <input
-              id="battery-duration"
-              name="batteryDuration"
-              type="text"
-              autocomplete="off"
-              placeholder="ex.: 3 anos ou 36 meses"
-              disabled
-            />
-
-            <label for="last-battery-change-date">Data da última troca de bateria (opcional)</label>
-            <input
-              id="last-battery-change-date"
-              name="lastBatteryChangeDate"
-              type="text"
-              inputmode="numeric"
-              maxlength="10"
-              autocomplete="off"
-              disabled
-            />
-
-            <label for="note">Observação</label>
-            <input id="note" name="note" type="text" autocomplete="off" />
-
-            <button id="watch-submit-button" type="submit">Salvar relógio</button>
-          </form>
-
-          <section>
-            <h3>Lista de relógios</h3>
-            <p id="watches-average-age" class="watch-summary"></p>
-            <ul id="watches-list" class="watches-list"></ul>
+          <section class="dashboard-hero" aria-labelledby="dashboard-title">
+            <div>
+              <p class="eyebrow">Painel da coleção</p>
+              <h1 id="dashboard-title">Meus relógios de pulso</h1>
+              <p>
+                Acompanhe idade, bateria, precisão e dados de compra sem perder tempo
+                procurando informações.
+              </p>
+            </div>
+            <a class="button-link primary-action" href="#watch-form">Novo relógio</a>
           </section>
-        </section>
 
-        <p id="feedback" class="feedback" aria-live="polite"></p>
+          <section class="metrics-grid" aria-label="Resumo da coleção">
+            <article class="metric-card">
+              <span>Total cadastrado</span>
+              <strong id="watches-total">0</strong>
+            </article>
+            <article class="metric-card">
+              <span>Idade média</span>
+              <strong id="watches-average-age" class="watch-summary">Sem dados</strong>
+            </article>
+            <article class="metric-card">
+              <span>Status de bateria</span>
+              <strong id="watches-battery-status">Sem alertas</strong>
+            </article>
+          </section>
+
+          <div class="workspace-grid">
+            <aside class="form-panel" aria-labelledby="watch-form-title">
+              <div class="section-heading">
+                <p class="eyebrow">Cadastro</p>
+                <h2 id="watch-form-title">Adicionar relógio</h2>
+                <p>Preencha apenas o essencial agora e ajuste os detalhes depois.</p>
+              </div>
+
+              <form
+                id="watch-form"
+                class="watch-form"
+                novalidate
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
+              >
+                <fieldset>
+                  <legend>Identificação</legend>
+                  <div class="form-grid">
+                    <div class="form-field">
+                      <label for="brand">Marca</label>
+                      <input id="brand" name="brand" type="text" autocomplete="off" required />
+                    </div>
+
+                    <div class="form-field">
+                      <label for="model">Modelo</label>
+                      <input id="model" name="model" type="text" autocomplete="off" required />
+                    </div>
+                  </div>
+                </fieldset>
+
+                <fieldset>
+                  <legend>Compra e técnica</legend>
+                  <div class="form-grid">
+                    <div class="form-field">
+                      <label for="purchase-date">Data da compra</label>
+                      <input
+                        id="purchase-date"
+                        name="purchaseDate"
+                        type="text"
+                        inputmode="numeric"
+                        maxlength="10"
+                        autocomplete="off"
+                        placeholder="dd/mm/aaaa"
+                        required
+                      />
+                    </div>
+
+                    <div class="form-field">
+                      <label for="price">Preço (R$)</label>
+                      <input
+                        id="price"
+                        name="price"
+                        type="text"
+                        inputmode="decimal"
+                        maxlength="20"
+                        autocomplete="off"
+                        placeholder="0,00"
+                      />
+                    </div>
+
+                    <div class="form-field">
+                      <label for="precision">Precisão mensal</label>
+                      <input
+                        id="precision"
+                        name="precision"
+                        type="text"
+                        inputmode="decimal"
+                        autocomplete="off"
+                        placeholder="+20 ou -15"
+                      />
+                    </div>
+                  </div>
+                </fieldset>
+
+                <fieldset>
+                  <legend>Bateria</legend>
+                  <label class="check-row" for="has-battery">
+                    <input id="has-battery" name="hasBattery" type="checkbox" />
+                    <span>Usa bateria</span>
+                  </label>
+
+                  <div class="form-grid">
+                    <div class="form-field battery-field is-collapsed" data-battery-field>
+                      <label for="battery-duration">Duração da bateria</label>
+                      <input
+                        id="battery-duration"
+                        name="batteryDuration"
+                        type="text"
+                        autocomplete="off"
+                        placeholder="ex.: 3 anos ou 36 meses"
+                        disabled
+                      />
+                    </div>
+
+                    <div class="form-field battery-field is-collapsed" data-battery-field>
+                      <label for="last-battery-change-date">Última troca de bateria</label>
+                      <input
+                        id="last-battery-change-date"
+                        name="lastBatteryChangeDate"
+                        type="text"
+                        inputmode="numeric"
+                        maxlength="10"
+                        autocomplete="off"
+                        placeholder="dd/mm/aaaa"
+                        disabled
+                      />
+                    </div>
+                  </div>
+                </fieldset>
+
+                <div class="form-field">
+                  <label for="note">Observação</label>
+                  <input id="note" name="note" type="text" autocomplete="off" />
+                </div>
+
+                <button id="watch-submit-button" type="submit" class="primary-action">
+                  Salvar relógio
+                </button>
+              </form>
+            </aside>
+
+            <section class="collection-panel" aria-labelledby="collection-title">
+              <div class="section-heading collection-heading">
+                <div>
+                  <p class="eyebrow">Coleção</p>
+                  <h2 id="collection-title">Relógios cadastrados</h2>
+                  <p id="watches-list-helper">Cadastre seu primeiro relógio para começar.</p>
+                </div>
+              </div>
+
+              <ul id="watches-list" class="watches-list"></ul>
+            </section>
+          </div>
+        </section>
       </section>
+
+      <p id="feedback" class="feedback" aria-live="polite"></p>
     </main>
 
     <script type="module" src="./app.js"></script>
